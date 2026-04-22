@@ -40,6 +40,9 @@
 - Видео пока не является обязательным условием POC.
 - Ручной оператор в MVP не планируется.
 - Архитектурная схема по размещению: `Raspberry Pi` рядом с механикой + облако или локальная машина для сервисной логики.
+- Detection / count validation можно разрабатывать и проверять на обычных игральных картах.
+- Финальное распознавание для Таро не должно опираться на угол карты и ранги/масти игральной колоды.
+- Целевой путь для Таро: `whole-card recognition + upright/reversed + OCR fallback + layout interpreter`.
 
 ## Главные POC-gates
 
@@ -91,7 +94,7 @@
 
 1. Фото-стенд, набор реальных фото, quality gate.
 2. Detection / count validation по фото.
-3. Recognition / orientation / confidence.
+3. Recognition / orientation / confidence для Таро по всей карте, а не по corner-template схеме.
 4. TTS-проверка на "живость".
 5. Реальная LLM вместо mock.
 6. `Session` и `event log`.
