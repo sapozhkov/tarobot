@@ -109,6 +109,45 @@ python3 -m unittest discover -s tests -v
 - `reading_audio.m4a` или текстовая заглушка, если аудио отключено
 - `manifest.json`
 
+## Vision POC для обычных карт
+
+Для задач `#1` и `#2` в репозитории есть простой локальный инструмент распознавания обычных игральных карт на фото.
+
+Сейчас он рассчитан на фотографии сверху, темный фон и светлые карты. В качестве reference-набора используется [tests/examples/card_set/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/card_set/manifest.json).
+
+Установка зависимостей:
+
+```bash
+python3 -m pip install --user -e .
+```
+
+Локальный запуск по каталогу с изображениями:
+
+```bash
+python3 recognize_cards.py tests/examples/card_set --output-dir runs/playing_cards_demo
+```
+
+Что делает инструмент:
+
+- находит кандидаты карт на фото;
+- проверяет ожидаемое количество карт;
+- выравнивает каждую найденную карту;
+- пытается распознать масть и ранг;
+- отдает `reason_codes`, confidence и debug-артефакты.
+
+Что сохраняется в `--output-dir`:
+
+- `summary.json` с итогом по всем изображениям;
+- `mask.png` и `overlay.png` для каждой сцены;
+- `card_XX.png` с выровненными кропами карт;
+- `debug.json` с bbox, confidence и top-k кандидатами.
+
+Текущие ограничения POC:
+
+- reference-слой опирается на уже размеченные примеры из manifest;
+- при сильном перекрытии карт инструмент лучше отказывается, чем уверенно врет;
+- это еще не tarot-specific pipeline, а быстрый CV-стенд для проверки detection/count/recognition.
+
 ## Верхнеуровневый flow
 
 1. Telegram-бот принимает заявку.
