@@ -11,11 +11,18 @@ import numpy as np
 
 
 DEFAULT_RESIZED_WIDTH = 1400
+MULTISCALE_RESIZED_WIDTHS = (1400, 1800, 2200)
 WARP_WIDTH = 240
 WARP_HEIGHT = 360
 CARD_CONFIDENCE_THRESHOLD = 0.50
 OVERLAP_IMAGE_CONFIDENCE_THRESHOLD = 0.65
 EXACT_TEMPLATE_THRESHOLD = 0.90
+MIN_CARD_BBOX_AREA = 25000
+MIN_CARD_ASPECT_RATIO = 1.05
+MAX_CARD_ASPECT_RATIO = 2.10
+MIN_REASONABLE_WIDTH_RATIO = 0.55
+MIN_REASONABLE_HEIGHT_RATIO = 0.55
+MIN_REASONABLE_AREA_RATIO = 0.40
 
 RANK_TO_RU = {
     "6": "шестерка",
@@ -115,6 +122,15 @@ class ReferenceLibrary:
     rank_templates: Dict[str, np.ndarray]
     suit_templates: Dict[str, np.ndarray]
     card_templates: Dict[str, np.ndarray]
+    rank_face_templates: Dict[str, np.ndarray]
+
+
+@dataclass(frozen=True)
+class DetectionPass:
+    resized_image: np.ndarray
+    mask: np.ndarray
+    candidates: List[CardCandidate]
+    target_width: int
 
 
 def load_card_manifest(manifest_path: Path) -> PlayingCardManifest:
@@ -183,7 +199,7 @@ def detect_card_candidates(image: np.ndarray, expected_total_count: Optional[int
         x, y, width, height, area = stats[component_id]
         bbox_area = int(width * height)
         aspect_ratio = max(width, height) / max(1, min(width, height))
-        if not (bbox_area > 50000 and 1.15 < aspect_ratio < 2.10):
+        if not (bbox_area > MIN_CARD_BBOX_AREA and MIN_CARD_ASPECT_RATIO < aspect_ratio < MAX_CARD_ASPECT_RATIO):
             continue
 
         component_mask = np.where(labels[y : y + height, x : x + width] == component_id, 255, 0).astype("uint8")
@@ -208,6 +224,10 @@ def detect_card_candidates(image: np.ndarray, expected_total_count: Optional[int
         )
 
     raw_candidates.sort(key=lambda candidate: candidate.center_x)
+    if not raw_candidates:
+        return []
+
+    raw_candidates = filter_reasonable_candidates(raw_candidates)
     if not raw_candidates:
         return []
 
@@ -246,6 +266,55 @@ def detect_card_candidates(image: np.ndarray, expected_total_count: Optional[int
     return normalized_candidates
 
 
+def filter_reasonable_candidates(candidates: List[CardCandidate]) -> List[CardCandidate]:
+    if len(candidates) < 3:
+        return candidates
+
+    widths = [candidate.bbox[2] for candidate in candidates]
+    heights = [candidate.bbox[3] for candidate in candidates]
+    areas = [candidate.bbox_area for candidate in candidates]
+    median_width = median(widths)
+    median_height = median(heights)
+    median_area = median(areas)
+
+    filtered = [
+        candidate
+        for candidate in candidates
+        if candidate.bbox[2] >= median_width * MIN_REASONABLE_WIDTH_RATIO
+        and candidate.bbox[3] >= median_height * MIN_REASONABLE_HEIGHT_RATIO
+        and candidate.bbox_area >= median_area * MIN_REASONABLE_AREA_RATIO
+    ]
+    return filtered or candidates
+
+
+def choose_detection_pass(image: np.ndarray, expected_total_count: Optional[int]) -> DetectionPass:
+    widths = MULTISCALE_RESIZED_WIDTHS if expected_total_count is not None else (DEFAULT_RESIZED_WIDTH,)
+    detection_passes: List[DetectionPass] = []
+    for target_width in widths:
+        resized_image = resize_for_detection(image, target_width=target_width)
+        mask = build_card_mask(resized_image)
+        candidates = detect_card_candidates(resized_image, expected_total_count=expected_total_count)
+        detection_passes.append(
+            DetectionPass(
+                resized_image=resized_image,
+                mask=mask,
+                candidates=candidates,
+                target_width=target_width,
+            )
+        )
+
+    if expected_total_count is None:
+        return detection_passes[0]
+
+    return min(
+        detection_passes,
+        key=lambda detection_pass: (
+            abs(len(detection_pass.candidates) - expected_total_count),
+            detection_pass.target_width,
+        ),
+    )
+
+
 def symbol_mask(image: np.ndarray) -> np.ndarray:
     blue, green, red = cv2.split(image)
     gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
@@ -277,14 +346,25 @@ def normalize_binary_mask(mask: np.ndarray, size: Tuple[int, int], largest_only:
     return cv2.resize(cropped, size, interpolation=cv2.INTER_AREA)
 
 
-def extract_corner_rois(card_image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    # The bottom-right card index exists on every card. Rotate it to get a canonical upright corner.
-    corner_patch = cv2.rotate(card_image[-120:, -90:], cv2.ROTATE_180)
+def extract_corner_rois_from_patch(corner_patch: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     rank_raw = symbol_mask(corner_patch[5:82, 4:60])
     suit_raw = symbol_mask(corner_patch[55:112, 4:50])
     rank_mask = normalize_binary_mask(rank_raw, size=(52, 74), largest_only=False)
     suit_mask = normalize_binary_mask(suit_raw, size=(38, 42), largest_only=True)
     return rank_mask, suit_mask
+
+
+def extract_corner_rois_variants(card_image: np.ndarray) -> List[Tuple[np.ndarray, np.ndarray]]:
+    top_left_corner = card_image[:120, :90]
+    bottom_right_corner = cv2.rotate(card_image[-120:, -90:], cv2.ROTATE_180)
+    return [
+        extract_corner_rois_from_patch(top_left_corner),
+        extract_corner_rois_from_patch(bottom_right_corner),
+    ]
+
+
+def extract_corner_rois(card_image: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
+    return extract_corner_rois_variants(card_image)[1]
 
 
 def extract_suit_patch(card_image: np.ndarray) -> np.ndarray:
@@ -344,6 +424,7 @@ def build_reference_library(manifest: PlayingCardManifest, base_dir: Path) -> Re
     rank_templates: Dict[str, List[np.ndarray]] = {}
     suit_templates: Dict[str, List[np.ndarray]] = {}
     card_templates: Dict[str, np.ndarray] = {}
+    rank_face_templates: Dict[str, List[np.ndarray]] = {}
 
     for entry in manifest.images.values():
         if entry.role != "reference":
@@ -362,16 +443,21 @@ def build_reference_library(manifest: PlayingCardManifest, base_dir: Path) -> Re
 
         for candidate, label in zip(candidates, entry.visible_labels_left_to_right):
             warped = rectify_card(image, candidate.box_points)
-            rank_mask, suit_mask = extract_corner_rois(warped)
             rank, suit = parse_label(label)
-            rank_templates.setdefault(rank, []).append(rank_mask)
-            suit_templates.setdefault(suit, []).append(suit_mask)
-            card_templates[label] = normalize_face_card(warped)
+            for rank_mask, suit_mask in extract_corner_rois_variants(warped):
+                rank_templates.setdefault(rank, []).append(rank_mask)
+                suit_templates.setdefault(suit, []).append(suit_mask)
+            normalized_face = normalize_face_card(warped)
+            card_templates[label] = normalized_face
+            rank_face_templates.setdefault(rank, []).append(normalized_face)
 
     return ReferenceLibrary(
         rank_templates={rank: np.mean(samples, axis=0).astype("uint8") for rank, samples in rank_templates.items()},
         suit_templates={suit: np.mean(samples, axis=0).astype("uint8") for suit, samples in suit_templates.items()},
         card_templates=card_templates,
+        rank_face_templates={
+            rank: np.mean(samples, axis=0).astype("uint8") for rank, samples in rank_face_templates.items()
+        },
     )
 
 
@@ -388,15 +474,27 @@ def recognize_card(
     candidate: CardCandidate,
     image_overlap_suspected: bool = False,
 ) -> PlayingCardRecognition:
+    normalized_face = normalize_face_card(card_image)
     exact_scores = {
-        label: template_similarity(normalize_face_card(card_image), template)
+        label: template_similarity(normalized_face, template)
         for label, template in library.card_templates.items()
     }
     best_exact_label = max(exact_scores, key=exact_scores.get) if exact_scores else None
     best_exact_score = exact_scores[best_exact_label] if best_exact_label else -1.0
 
-    rank_mask, suit_mask = extract_corner_rois(card_image)
-    rank_scores = {rank: template_similarity(rank_mask, template) for rank, template in library.rank_templates.items()}
+    corner_variants = extract_corner_rois_variants(card_image)
+    corner_rank_scores = {
+        rank: max(template_similarity(rank_mask, template) for rank_mask, _ in corner_variants)
+        for rank, template in library.rank_templates.items()
+    }
+    face_rank_scores = {
+        rank: template_similarity(normalized_face, template)
+        for rank, template in library.rank_face_templates.items()
+    }
+    rank_scores = {
+        rank: (corner_rank_scores[rank] * 0.55) + (face_rank_scores[rank] * 0.45)
+        for rank in library.rank_templates.keys()
+    }
     suit_family = infer_suit_family(card_image)
     if suit_family == "red":
         allowed_suits = {"D", "H"}
@@ -405,7 +503,7 @@ def recognize_card(
     else:
         allowed_suits = set(library.suit_templates.keys())
     suit_scores = {
-        suit: template_similarity(suit_mask, template)
+        suit: max(template_similarity(suit_mask, template) for _, suit_mask in corner_variants)
         for suit, template in library.suit_templates.items()
         if suit in allowed_suits
     }
@@ -514,9 +612,10 @@ def analyze_image(
     if image is None:
         raise FileNotFoundError(image_path)
 
-    image = resize_for_detection(image)
-    mask = build_card_mask(image)
-    candidates = detect_card_candidates(image, expected_total_count=expected_total_count)
+    detection_pass = choose_detection_pass(image, expected_total_count=expected_total_count)
+    image = detection_pass.resized_image
+    mask = detection_pass.mask
+    candidates = detection_pass.candidates
 
     reason_codes: List[str] = []
     if not candidates:
