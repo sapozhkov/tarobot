@@ -6,18 +6,28 @@
 
 - Создать базовую структуру репозитория
 - Выбрать стек POC и зафиксировать ADR
-- Поднять локальную среду разработки через Docker Compose
+- Поднять локальную среду разработки
 - Настроить базовый CI
 - Добавить линтеры, форматтеры и тестовый каркас
 
 ## Epic 2. Domain And Workflow
 
-- Описать модель заявки и state machine
-- Описать доменные сущности: request, reading, artifact, hardware session
+- Описать минимальную модель заявки для MVP
+- Описать доменные сущности: request, reading, artifact, spread
+- Добавить параметр количества карт в раскладе
 - Определить контракты шагов пайплайна
-- Определить retry policy и terminal states
+- Определить минимальные terminal states для MVP
 
-## Epic 3. Telegram Intake
+## Epic 3. Core MVP Flow
+
+- Реализовать прием текстового запроса
+- Реализовать генерацию текста гадания через LLM
+- Реализовать TTS
+- Реализовать simulated cards
+- Реализовать сбор итогового артефакта: текст + аудио
+- Добавить базовые e2e тесты на путь `text in -> artifact`
+
+## Epic 4. Telegram Intake
 
 - Реализовать Telegram-бота
 - Добавить прием новой заявки
@@ -25,14 +35,14 @@
 - Добавить отправку результата пользователю
 - Добавить rate limiting и антиспам
 
-## Epic 4. Validation
+## Epic 5. Validation
 
 - Реализовать слой safety moderation
 - Реализовать проверку на prompt injection
 - Реализовать нормализацию пользовательского запроса
-- Добавить сценарий ручной проверки сомнительных заявок
+- Добавить сценарий автоматического отклонения сомнительных заявок
 
-## Epic 5. Orchestration And Queue
+## Epic 6. Orchestration And Queue
 
 - Поднять очередь задач
 - Реализовать оркестратор шагов
@@ -40,7 +50,7 @@
 - Добавить recovery после падения воркера
 - Добавить retries и dead-letter сценарии
 
-## Epic 6. LLM And Reading Generation
+## Epic 7. LLM And Reading Generation
 
 - Реализовать адаптер LLM
 - Сформировать prompt chain для вступления
@@ -48,7 +58,7 @@
 - Определить формат структурированного ответа
 - Добавить тесты на стабильность выходного формата
 
-## Epic 7. TTS And Media
+## Epic 8. TTS And Media
 
 - Реализовать адаптер TTS
 - Определить формат аудио-артефактов
@@ -56,26 +66,27 @@
 - Добавить наложение вступления и финального ответа на видео
 - Добавить хранение media-артефактов
 
-## Epic 8. Hardware Abstraction
+## Epic 9. Hardware Abstraction
 
 - Описать интерфейс управления механикой
 - Реализовать simulator adapter
 - Реализовать журнал действий механики
 - Реализовать таймауты и аварийную остановку
+- Подготовить контракт для Raspberry Pi agent
 - Подготовить контракт для real device adapter
 
-## Epic 9. Vision
+## Epic 10. Vision
 
 - Собрать тестовый датасет изображений карт
 - Реализовать MVP-распознавание карт
 - Проверить точность на реальных условиях съемки
 - Добавить fallback для ручного подтверждения карты
 
-## Epic 10. Delivery And Operations
+## Epic 11. Delivery And Operations
 
 - Реализовать сбор итогового набора артефактов
 - Добавить отправку текста, фото и видео пользователю
-- Реализовать операторский интерфейс или CLI
+- Реализовать сервисный CLI или технический API для отладки
 - Добавить audit trail по каждой заявке
 - Добавить метрики и алерты для POC
 
@@ -83,26 +94,30 @@
 
 1. Foundation
 2. Domain And Workflow
-3. Telegram Intake
-4. Validation
-5. Orchestration And Queue
-6. LLM And Reading Generation
-7. TTS And Media
-8. Hardware Abstraction
-9. Vision
-10. Delivery And Operations
+3. Core MVP Flow
+4. Telegram Intake
+5. Validation
+6. Orchestration And Queue
+7. LLM And Reading Generation
+8. TTS And Media
+9. Hardware Abstraction
+10. Vision
+11. Delivery And Operations
 
 ## Минимальный vertical slice
 
 Первый по-настоящему полезный slice:
 
-- Telegram intake
-- validation
-- queue
-- orchestration
+- text input
 - LLM text generation
 - TTS
 - simulator cards
 - artifact delivery
 
-Если он работает, значит проект уже живет и дальше можно заменять моки на реальные подсистемы.
+Первый целевой артефакт:
+
+- текст гадания
+- аудиофайл озвучки
+- данные о выпавших картах
+
+Если он работает, значит проект уже живет и дальше можно отдельно добавлять Telegram, очередь, видео и железо.
