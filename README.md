@@ -62,7 +62,7 @@
 - текстовый вопрос;
 - simulated draw на 3 или 5 карт;
 - локальная генерация текста гадания через `MockLLMService`;
-- TTS через macOS `say`;
+- TTS через macOS `say` с сегментированным speech-планом;
 - сохранение артефактов в каталог `runs/`.
 
 Это не финальный стек, а рабочий контур, который потом можно по частям заменить на:
@@ -93,6 +93,12 @@ python3 main.py "Стоит ли запускать Tarobot летом?" --cards
 python3 main.py "Какой сейчас лучший следующий шаг?" --cards 3 --silent-tts
 ```
 
+Если нужно руками сравнить подачу голоса:
+
+```bash
+python3 main.py "Какой тон для Tarobot звучит убедительнее?" --cards 3 --tts-voice Milena --tts-rate 165
+```
+
 Проверка теста:
 
 ```bash
@@ -106,6 +112,7 @@ python3 -m unittest discover -s tests -v
 - `reading.txt`
 - `reading.json`
 - `spoken_text.txt`
+- `speech_plan.json`
 - `reading_audio.m4a` или текстовая заглушка, если аудио отключено
 - `manifest.json`
 

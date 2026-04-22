@@ -1,9 +1,10 @@
 from __future__ import annotations
 
+import re
 from typing import List
 
 from .cards import dominant_suit, major_arcana_count
-from .models import DrawnCard, ReadingNarrative, ReadingRequest
+from .models import DrawnCard, ReadingNarrative, ReadingRequest, SpeechPlan, SpeechSegment
 
 
 SUIT_THEMES = {
@@ -22,14 +23,14 @@ class MockLLMService:
         sections = [self._section_for_card(request, card) for card in cards]
         summary = self._summary(cards)
         advice = self._advice(cards)
-        spoken_text = self._spoken_text(request, cards, summary, advice)
+        speech_plan = self._speech_plan(request, cards, summary, advice)
 
         return ReadingNarrative(
-            title=f"Расклад на {len(cards)} карт",
+            title=self._spread_title(len(cards)),
             summary=f"{lead} {summary}",
             card_sections=sections,
             advice=advice,
-            spoken_text=spoken_text,
+            speech_plan=speech_plan,
         )
 
     def _lead(self, cards: List[DrawnCard]) -> str:
@@ -69,22 +70,106 @@ class MockLLMService:
             return "Совет расклада: опереться на конкретику, режим, деньги и проверяемые шаги."
         return "Совет расклада: не торопить итог, а собрать больше ясности и шаг за шагом выровнять ситуацию."
 
-    def _spoken_text(
+    def _speech_plan(
         self,
         request: ReadingRequest,
         cards: List[DrawnCard],
         summary: str,
         advice: str,
-    ) -> str:
-        opening = (
-            f"Смотрю на ваш вопрос: {request.question}. "
-            f"В раскладе выпали {len(cards)} карт."
-        )
-
-        card_lines = [
-            f"{card.position_label}: {card.card.name}. {card.meaning}."
-            for card in cards
+    ) -> SpeechPlan:
+        segments = [
+            SpeechSegment(
+                key="intro",
+                section="intro",
+                text=(
+                    "Сейчас спокойно посмотрим на ваш вопрос. "
+                    f"Вы спрашиваете: {self._normalize_question_for_speech(request.question)}. "
+                    f"В раскладе сегодня {self._cards_count_phrase(len(cards))}."
+                ),
+                pause_ms=700,
+            )
         ]
 
-        spoken = " ".join([opening, *card_lines, summary, advice])
-        return spoken[:1800]
+        for card in cards:
+            segments.append(
+                SpeechSegment(
+                    key=f"card_{card.position}",
+                    section="cards",
+                    text=self._spoken_card_line(card),
+                    pause_ms=550,
+                )
+            )
+
+        segments.append(
+            SpeechSegment(
+                key="summary",
+                section="summary",
+                text=(
+                    "Если собрать расклад целиком, то "
+                    f"{self._lowercase_first_char(self._normalize_sentence(summary))}"
+                ),
+                pause_ms=700,
+            )
+        )
+        segments.append(
+            SpeechSegment(
+                key="advice",
+                section="outro",
+                text=(
+                    "И главный совет здесь такой: "
+                    f"{self._lowercase_first_char(self._normalize_sentence(self._spoken_advice(advice)))}"
+                ),
+                pause_ms=300,
+            )
+        )
+        return SpeechPlan(segments=segments)
+
+    def _spoken_card_line(self, card: DrawnCard) -> str:
+        orientation = "в прямом положении" if card.orientation == "upright" else "в перевернутом положении"
+        meaning = self._normalize_meaning_for_speech(card.meaning)
+        return (
+            f"{card.position_label}. {card.card.name}, {orientation}. "
+            f"Эта карта говорит о том, что {meaning}"
+        )
+
+    def _spoken_advice(self, advice: str) -> str:
+        prefix = "Совет расклада:"
+        if advice.startswith(prefix):
+            return advice[len(prefix):].strip()
+        return advice
+
+    def _normalize_question_for_speech(self, question: str) -> str:
+        return question.strip().rstrip("?.!…")
+
+    def _cards_count_phrase(self, cards_count: int) -> str:
+        if cards_count % 10 == 1 and cards_count % 100 != 11:
+            return f"{cards_count} карта"
+        if cards_count % 10 in {2, 3, 4} and cards_count % 100 not in {12, 13, 14}:
+            return f"{cards_count} карты"
+        return f"{cards_count} карт"
+
+    def _spread_title(self, cards_count: int) -> str:
+        if cards_count % 10 == 1 and cards_count % 100 != 11:
+            return f"Расклад на {cards_count} карту"
+        if cards_count % 10 in {2, 3, 4} and cards_count % 100 not in {12, 13, 14}:
+            return f"Расклад на {cards_count} карты"
+        return f"Расклад на {cards_count} карт"
+
+    def _normalize_meaning_for_speech(self, meaning: str) -> str:
+        normalized = meaning.replace("; тема карты:", ". Отдельно здесь звучит тема:")
+        normalized = re.sub(r"\s+", " ", normalized).strip()
+        normalized = normalized.rstrip(".")
+        if normalized:
+            normalized = normalized[0].lower() + normalized[1:]
+        return f"{normalized}."
+
+    def _normalize_sentence(self, text: str) -> str:
+        normalized = re.sub(r"\s+", " ", text).strip()
+        if not normalized.endswith((".", "!", "?", "…")):
+            normalized += "."
+        return normalized[:600]
+
+    def _lowercase_first_char(self, text: str) -> str:
+        if not text:
+            return text
+        return text[0].lower() + text[1:]

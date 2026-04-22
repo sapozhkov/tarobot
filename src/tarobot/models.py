@@ -49,12 +49,33 @@ class ReadingArtifact:
 
 
 @dataclass(frozen=True)
+class SpeechSegment:
+    key: str
+    section: str
+    text: str
+    pause_ms: int = 450
+
+
+@dataclass(frozen=True)
+class SpeechPlan:
+    segments: List[SpeechSegment]
+
+    @property
+    def full_text(self) -> str:
+        return " ".join(segment.text for segment in self.segments)
+
+
+@dataclass(frozen=True)
 class ReadingNarrative:
     title: str
     summary: str
     card_sections: List[str]
     advice: str
-    spoken_text: str
+    speech_plan: SpeechPlan
+
+    @property
+    def spoken_text(self) -> str:
+        return self.speech_plan.full_text
 
 
 @dataclass(frozen=True)

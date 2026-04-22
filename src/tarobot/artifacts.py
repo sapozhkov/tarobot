@@ -56,6 +56,7 @@ class ArtifactStore:
     def save_narrative(self, run_dir: Path, narrative: ReadingNarrative) -> List[ReadingArtifact]:
         text_path = run_dir / "reading.txt"
         spoken_path = run_dir / "spoken_text.txt"
+        speech_plan_path = run_dir / "speech_plan.json"
         json_path = run_dir / "reading.json"
 
         reading_text = "\n\n".join(
@@ -68,6 +69,25 @@ class ArtifactStore:
         )
         text_path.write_text(reading_text, encoding="utf-8")
         spoken_path.write_text(narrative.spoken_text, encoding="utf-8")
+        speech_plan_path.write_text(
+            json.dumps(
+                {
+                    "segments": [
+                        {
+                            "key": segment.key,
+                            "section": segment.section,
+                            "text": segment.text,
+                            "pause_ms": segment.pause_ms,
+                        }
+                        for segment in narrative.speech_plan.segments
+                    ],
+                    "full_text": narrative.spoken_text,
+                },
+                ensure_ascii=False,
+                indent=2,
+            ),
+            encoding="utf-8",
+        )
         json_path.write_text(
             json.dumps(
                 {
@@ -76,6 +96,15 @@ class ArtifactStore:
                     "card_sections": narrative.card_sections,
                     "advice": narrative.advice,
                     "spoken_text": narrative.spoken_text,
+                    "speech_plan": [
+                        {
+                            "key": segment.key,
+                            "section": segment.section,
+                            "text": segment.text,
+                            "pause_ms": segment.pause_ms,
+                        }
+                        for segment in narrative.speech_plan.segments
+                    ],
                 },
                 ensure_ascii=False,
                 indent=2,
@@ -86,6 +115,7 @@ class ArtifactStore:
         return [
             ReadingArtifact(kind="reading_text", path=text_path),
             ReadingArtifact(kind="spoken_text", path=spoken_path),
+            ReadingArtifact(kind="speech_plan", path=speech_plan_path),
             ReadingArtifact(kind="reading_json", path=json_path),
         ]
 

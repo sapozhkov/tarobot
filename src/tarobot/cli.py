@@ -34,6 +34,17 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not synthesize audio; save spoken text instead",
     )
+    parser.add_argument(
+        "--tts-voice",
+        default="Milena",
+        help="macOS say voice for spoken output",
+    )
+    parser.add_argument(
+        "--tts-rate",
+        type=int,
+        default=165,
+        help="Base speech rate for macOS say",
+    )
     return parser
 
 
@@ -46,7 +57,12 @@ def main(argv: Sequence[str] | None = None) -> int:
         cards_count=args.cards,
         seed=args.seed,
     )
-    app = build_default_app(args.output_dir, enable_tts=not args.silent_tts)
+    app = build_default_app(
+        args.output_dir,
+        enable_tts=not args.silent_tts,
+        tts_voice=args.tts_voice,
+        tts_rate=args.tts_rate,
+    )
     result = app.run(request)
 
     print(f"Run ID: {result.run_id}")
