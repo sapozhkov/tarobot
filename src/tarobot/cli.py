@@ -35,6 +35,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="Do not synthesize audio; save spoken text instead",
     )
     parser.add_argument(
+        "--llm-provider",
+        choices=("auto", "mock", "yandex"),
+        default="auto",
+        help="Reading generation backend. 'auto' uses local config",
+    )
+    parser.add_argument(
+        "--tts-provider",
+        choices=("auto", "macos", "yandex"),
+        default="auto",
+        help="Speech synthesis backend. 'auto' uses local config",
+    )
+    parser.add_argument(
         "--tts-voice",
         default="Milena",
         help="macOS say voice for spoken output",
@@ -57,13 +69,18 @@ def main(argv: Sequence[str] | None = None) -> int:
         cards_count=args.cards,
         seed=args.seed,
     )
-    app = build_default_app(
-        args.output_dir,
-        enable_tts=not args.silent_tts,
-        tts_voice=args.tts_voice,
-        tts_rate=args.tts_rate,
-    )
-    result = app.run(request)
+    try:
+        app = build_default_app(
+            args.output_dir,
+            enable_tts=not args.silent_tts,
+            tts_voice=args.tts_voice,
+            tts_rate=args.tts_rate,
+            llm_provider_override=None if args.llm_provider == "auto" else args.llm_provider,
+            tts_provider_override=None if args.tts_provider == "auto" else args.tts_provider,
+        )
+        result = app.run(request)
+    except RuntimeError as exc:
+        parser.exit(status=1, message=f"Ошибка: {exc}\n")
 
     print(f"Run ID: {result.run_id}")
     print(f"Artifacts: {result.run_dir}")

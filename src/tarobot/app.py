@@ -5,16 +5,17 @@ from typing import List, Optional
 
 from .artifacts import ArtifactStore
 from .cards import draw_cards
-from .llm import MockLLMService
+from .config import TarobotSettings, load_settings
+from .llm import MockLLMService, ReadingGenerator, YandexLLMService
 from .models import ReadingArtifact, ReadingRequest, ReadingResult
-from .tts import SpeechSynthesizer
+from .tts import MacOSTTSProvider, SilentTTSProvider, SpeechSynthesizer, YandexSpeechKitTTSProvider
 
 
 class TarobotApp:
     def __init__(
         self,
         artifact_store: ArtifactStore,
-        llm_service: Optional[MockLLMService] = None,
+        llm_service: Optional[ReadingGenerator] = None,
         tts_provider: Optional[SpeechSynthesizer] = None,
     ) -> None:
         self.artifact_store = artifact_store
@@ -38,7 +39,8 @@ class TarobotApp:
             if audio_artifact:
                 artifacts.append(audio_artifact)
 
-        metadata = {"llm_backend": self.llm_service.__class__.__name__}
+        metadata = {"llm_backend": getattr(self.llm_service, "backend_name", self.llm_service.__class__.__name__)}
+        metadata.update(self.llm_service.metadata())
         if self.tts_provider:
             metadata.update(self.tts_provider.metadata())
         else:
@@ -61,11 +63,70 @@ def build_default_app(
     enable_tts: bool = True,
     tts_voice: str = "Milena",
     tts_rate: int = 165,
+    llm_provider_override: Optional[str] = None,
+    tts_provider_override: Optional[str] = None,
 ) -> TarobotApp:
-    from .tts import MacOSTTSProvider, SilentTTSProvider
-
-    tts_provider = MacOSTTSProvider(voice=tts_voice, rate=tts_rate) if enable_tts else SilentTTSProvider()
+    settings = load_settings()
+    llm_service = _build_llm_service(settings, llm_provider_override)
+    tts_provider = _build_tts_provider(settings, enable_tts, tts_voice, tts_rate, tts_provider_override)
     return TarobotApp(
         artifact_store=ArtifactStore(base_dir=base_dir),
+        llm_service=llm_service,
         tts_provider=tts_provider,
     )
+
+
+def _build_llm_service(settings: TarobotSettings, override: Optional[str]) -> ReadingGenerator:
+    provider = (override or settings.llm_provider or "mock").lower()
+    if provider in {"auto", "mock"}:
+        return MockLLMService()
+    if provider == "yandex":
+        if not settings.yandex_api_key:
+            raise RuntimeError("Для TAROBOT_LLM_PROVIDER=yandex нужен заполненный YANDEX_API_KEY")
+        model_uri = settings.resolve_yandex_model_uri()
+        if not model_uri:
+            raise RuntimeError(
+                "Чтобы включить Yandex LLM, укажи YANDEX_FOLDER_ID или готовый YANDEX_LLM_MODEL_URI"
+            )
+        return YandexLLMService(
+            api_key=settings.yandex_api_key,
+            model_uri=model_uri,
+            temperature=settings.yandex_llm_temperature,
+            max_tokens=settings.yandex_llm_max_tokens,
+            timeout_seconds=settings.yandex_llm_timeout_seconds,
+            tts_voice=settings.yandex_tts_voice,
+            tts_role=settings.yandex_tts_role,
+            tts_speed=settings.yandex_tts_speed,
+            tts_pitch_shift=settings.yandex_tts_pitch_shift,
+        )
+    raise RuntimeError(f"Неподдерживаемый LLM provider: {provider}")
+
+
+def _build_tts_provider(
+    settings: TarobotSettings,
+    enable_tts: bool,
+    macos_voice: str,
+    macos_rate: int,
+    override: Optional[str],
+) -> SpeechSynthesizer:
+    if not enable_tts:
+        return SilentTTSProvider()
+
+    provider = (override or settings.tts_provider or "macos").lower()
+    if provider in {"macos", "say", "auto"}:
+        return MacOSTTSProvider(voice=macos_voice, rate=macos_rate)
+    if provider == "yandex":
+        if not settings.yandex_api_key:
+            raise RuntimeError("Для TAROBOT_TTS_PROVIDER=yandex нужен заполненный YANDEX_API_KEY")
+        return YandexSpeechKitTTSProvider(
+            api_key=settings.yandex_api_key,
+            voice=settings.yandex_tts_voice,
+            role=settings.yandex_tts_role,
+            speed=settings.yandex_tts_speed,
+            pitch_shift=settings.yandex_tts_pitch_shift,
+            loudness_normalization_type=settings.yandex_tts_loudness_normalization_type,
+            volume=settings.yandex_tts_volume,
+            unsafe_mode=settings.yandex_tts_unsafe_mode,
+            timeout_seconds=settings.yandex_tts_timeout_seconds,
+        )
+    raise RuntimeError(f"Неподдерживаемый TTS provider: {provider}")

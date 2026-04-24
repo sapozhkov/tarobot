@@ -61,8 +61,8 @@
 
 - текстовый вопрос;
 - simulated draw на 3 или 5 карт;
-- локальная генерация текста гадания через `MockLLMService`;
-- TTS через macOS `say` с сегментированным speech-планом;
+- локальная генерация текста гадания через `MockLLMService` или `YandexGPT`;
+- TTS через macOS `say` или `Yandex SpeechKit v3` с сегментированным speech-планом;
 - сохранение артефактов в каталог `runs/`.
 
 Это не финальный стек, а рабочий контур, который потом можно по частям заменить на:
@@ -115,6 +115,31 @@ cp .env.example .env.local
 
 ```bash
 YANDEX_API_KEY=...
+```
+
+Для Yandex LLM добавь еще один из вариантов:
+
+```bash
+YANDEX_FOLDER_ID=...
+```
+
+или
+
+```bash
+YANDEX_LLM_MODEL_URI=gpt://<folder_id>/yandexgpt/latest
+```
+
+Если хочешь включить Yandex-стек целиком, в `.env.local` должны быть:
+
+```bash
+TAROBOT_LLM_PROVIDER=yandex
+TAROBOT_TTS_PROVIDER=yandex
+```
+
+Для разового переключения через CLI:
+
+```bash
+python3 main.py "Что сейчас самое важное?" --llm-provider yandex --tts-provider yandex
 ```
 
 После запуска в `runs/` сохраняются:
