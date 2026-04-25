@@ -81,11 +81,12 @@
 
 - `#1` POC: Vision MVP, часть 1 — находить карты на фото и валидировать количество в раскладе (`R1`)
 - `#2` POC: Vision MVP, часть 2 — распознавать карты, положение и уверенность результата (`R3`)
-- `#3` R9: TTS quality pass для `Yandex SpeechKit`
+- `#3` R9: TTS quality pass для `Yandex SpeechKit` — закрыта как completed / passed for POC
 - `#4` Интегрировать реальный LLM-адаптер для генерации гадания — закрыта как completed
 - `#5` Добавить модель `Session` и `event log` для повторяемых прогонов ритуала
 - `#6` Определить протокол `hardware-agent` и собрать локальный симулятор
 - `#7` Собрать stub-сервис `hardware-agent` для Raspberry Pi
+- `#12` TTS polish: sample matrix, длина речи и delivery formats
 
 Если появляется новая работа, по возможности привязывайте ее к существующим issue или заводите новое issue в том же стиле.
 
@@ -96,7 +97,7 @@
 1. Фото-стенд, набор реальных фото, quality gate.
 2. Detection / count validation по фото.
 3. Recognition / orientation / confidence для Таро по всей карте, а не по corner-template схеме.
-4. TTS-проверка на "живость".
+4. TTS-polish: sample matrix, длина речи и delivery format.
 5. Quality pass реальной LLM-генерации.
 6. `Session` и `event log`.
 7. Граница между основным сервисом и `hardware-agent`.
