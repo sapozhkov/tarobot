@@ -68,9 +68,10 @@
 
 1. [README.md](/Users/avlsapozhkov/projects/tarobot/README.md)
 2. [docs/iterations.md](/Users/avlsapozhkov/projects/tarobot/docs/iterations.md)
-3. [docs/vision-mvp.md](/Users/avlsapozhkov/projects/tarobot/docs/vision-mvp.md)
-4. [docs/risks.md](/Users/avlsapozhkov/projects/tarobot/docs/risks.md)
-5. [docs/backlog.md](/Users/avlsapozhkov/projects/tarobot/docs/backlog.md)
+3. [docs/tts-style.md](/Users/avlsapozhkov/projects/tarobot/docs/tts-style.md)
+4. [docs/vision-mvp.md](/Users/avlsapozhkov/projects/tarobot/docs/vision-mvp.md)
+5. [docs/risks.md](/Users/avlsapozhkov/projects/tarobot/docs/risks.md)
+6. [docs/backlog.md](/Users/avlsapozhkov/projects/tarobot/docs/backlog.md)
 
 Если что-то важное есть только в чате, а в этих файлах нет, значит знание еще не закреплено и его нужно закрепить.
 
@@ -80,8 +81,8 @@
 
 - `#1` POC: Vision MVP, часть 1 — находить карты на фото и валидировать количество в раскладе (`R1`)
 - `#2` POC: Vision MVP, часть 2 — распознавать карты, положение и уверенность результата (`R3`)
-- `#3` POC: TTS-проход — сделать аудио-артефакт достаточно "живым" (`R9`)
-- `#4` Интегрировать реальный LLM-адаптер для генерации гадания
+- `#3` R9: TTS quality pass для `Yandex SpeechKit`
+- `#4` Интегрировать реальный LLM-адаптер для генерации гадания — закрыта как completed
 - `#5` Добавить модель `Session` и `event log` для повторяемых прогонов ритуала
 - `#6` Определить протокол `hardware-agent` и собрать локальный симулятор
 - `#7` Собрать stub-сервис `hardware-agent` для Raspberry Pi
@@ -96,7 +97,7 @@
 2. Detection / count validation по фото.
 3. Recognition / orientation / confidence для Таро по всей карте, а не по corner-template схеме.
 4. TTS-проверка на "живость".
-5. Реальная LLM вместо mock.
+5. Quality pass реальной LLM-генерации.
 6. `Session` и `event log`.
 7. Граница между основным сервисом и `hardware-agent`.
 8. Реальный Raspberry Pi agent.

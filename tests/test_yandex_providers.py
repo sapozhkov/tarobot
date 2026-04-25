@@ -72,14 +72,14 @@ class YandexProviderTests(unittest.TestCase):
                                             ],
                                             "advice": "Лучше выбрать один ясный вектор и держаться его без лишней суеты.",
                                             "speech": {
-                                                "intro": "Сейчас <[small]> спокойно посмотрим на ваш вопрос.",
+                                                "intro": "Сейчас Tarobot <[small]> спокойно посмотрит на ваш вопрос.",
                                                 "cards": [
                                                     "Прошлое говорит: раньше вы слишком многое держали внутри.",
                                                     "Настоящее шепчет: **ясность** сейчас важнее спешки.",
                                                     "Будущее отвечает: шаг будет верным, если двигаться ровно.",
                                                 ],
                                                 "summary": "В целом расклад ведет вас к более собранному и взрослому решению.",
-                                                "outro": "Итог простой: действуйте мягко, но не сворачивайте.",
+                                                "outro": "Итог простой: следующий шаг для Tarobot — действовать мягко, но не сворачивать.",
                                             },
                                         },
                                         ensure_ascii=False,
@@ -115,8 +115,29 @@ class YandexProviderTests(unittest.TestCase):
         self.assertEqual(narrative.title, "Расклад на 3 карты")
         self.assertEqual(len(narrative.card_sections), 3)
         self.assertEqual(len(narrative.speech_plan.segments), 6)
-        self.assertIn("sil<[400]>", captured["body"]["messages"][0]["text"])
-        self.assertIn("Никогда не пиши буквальный шаблон sil<[t]>", captured["body"]["messages"][0]["text"])
+        self.assertIn("оракул", narrative.spoken_text)
+        self.assertIn("для проекта", narrative.spoken_text)
+        self.assertNotIn("Tarobot", narrative.spoken_text)
+        self.assertNotIn("Таробот", narrative.spoken_text)
+        system_prompt = captured["body"]["messages"][0]["text"]
+        user_prompt = captured["body"]["messages"][1]["text"]
+        self.assertIn("Механический Оракул", system_prompt)
+        self.assertIn("summary: минимум 5 предложений", system_prompt)
+        self.assertIn("Короткий ответ считается невалидным", system_prompt)
+        self.assertIn("стимпанка или киберпанка", system_prompt)
+        self.assertIn("Не называй сервис или голос по имени", system_prompt)
+        self.assertNotIn("R9", system_prompt)
+        self.assertNotIn("Tarobot", system_prompt)
+        self.assertIn("sil<[400]>", system_prompt)
+        self.assertIn("Никогда не пиши буквальный шаблон sil<[t]>", system_prompt)
+        self.assertIn("Контекст расклада", user_prompt)
+        self.assertIn("Режим ответа", user_prompt)
+        self.assertIn("Сюжетная дуга", user_prompt)
+        self.assertIn("Драматическая роль позиции", user_prompt)
+        self.assertIn("Сюжетный фокус", user_prompt)
+        self.assertIn("слишком короткий", captured["body"]["messages"][-1]["text"])
+        self.assertNotIn("R9", captured["body"]["messages"][-1]["text"])
+        self.assertEqual(service.metadata()["llm_expansion_repair_passes"], "1")
         self.assertEqual(captured["body"]["modelUri"], "gpt://folder/yandexgpt/latest")
         self.assertIn("Api-Key test-key", captured["headers"].get("Authorization", ""))
 

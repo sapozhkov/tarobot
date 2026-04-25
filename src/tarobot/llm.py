@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 from urllib.error import HTTPError, URLError
 from urllib.request import Request, urlopen
 
@@ -126,7 +126,17 @@ class MockLLMService(ReadingGenerator):
 
     def _normalize_question_for_speech(self, question: str) -> str:
         normalized = question.strip().rstrip("?.!…")
-        return normalized.replace("Tarobot", "Таробот").replace("tarobot", "Таробот")
+        replacements = {
+            "для проекта Tarobot": "для проекта",
+            "для проекта tarobot": "для проекта",
+            "для Tarobot": "для проекта",
+            "для tarobot": "для проекта",
+            "Tarobot": "проект",
+            "tarobot": "проект",
+        }
+        for source, target in replacements.items():
+            normalized = normalized.replace(source, target)
+        return normalized
 
     def _cards_count_phrase(self, cards_count: int) -> str:
         if cards_count % 10 == 1 and cards_count % 100 != 11:
@@ -172,7 +182,7 @@ class YandexLLMService(ReadingGenerator):
         api_key: str,
         model_uri: str,
         temperature: float = 0.75,
-        max_tokens: int = 1800,
+        max_tokens: int = 3200,
         timeout_seconds: int = 60,
         tts_voice: str = "marina",
         tts_role: Optional[str] = None,
@@ -194,7 +204,52 @@ class YandexLLMService(ReadingGenerator):
         return dict(self._last_metadata)
 
     def generate_reading(self, request: ReadingRequest, cards: List[DrawnCard]) -> ReadingNarrative:
-        payload = {
+        messages = [
+            {
+                "role": "system",
+                "text": build_yandex_reading_system_prompt(
+                    voice=self.tts_voice,
+                    role=self.tts_role,
+                    speed=self.tts_speed,
+                    pitch_shift=self.tts_pitch_shift,
+                ),
+            },
+            {
+                "role": "user",
+                "text": build_yandex_reading_user_prompt(request, cards),
+            },
+        ]
+
+        parsed, result, status, raw_text = self._complete(messages)
+        narrative = self._build_narrative(parsed, cards)
+
+        expansion_reasons = self._expansion_reasons(narrative, len(cards))
+        repair_passes = 0
+        if expansion_reasons:
+            repair_passes = 1
+            repair_messages = messages + [
+                {"role": "assistant", "text": raw_text},
+                {"role": "user", "text": self._build_expansion_repair_prompt(expansion_reasons, len(cards))},
+            ]
+            parsed, result, status, _ = self._complete(repair_messages)
+            narrative = self._build_narrative(parsed, cards)
+
+        usage = result.get("usage", {})
+        self._last_metadata = {
+            "llm_model_uri": self.model_uri,
+            "llm_model_version": str(result.get("modelVersion", "")),
+            "llm_status": str(status),
+            "llm_input_tokens": str(usage.get("inputTextTokens", "")),
+            "llm_completion_tokens": str(usage.get("completionTokens", "")),
+            "llm_total_tokens": str(usage.get("totalTokens", "")),
+            "llm_expansion_repair_passes": str(repair_passes),
+        }
+        if expansion_reasons:
+            self._last_metadata["llm_expansion_reasons"] = "; ".join(expansion_reasons)
+        return narrative
+
+    def _completion_payload(self, messages: List[Dict[str, str]]) -> Dict[str, object]:
+        return {
             "modelUri": self.model_uri,
             "completionOptions": {
                 "stream": False,
@@ -202,24 +257,11 @@ class YandexLLMService(ReadingGenerator):
                 "maxTokens": str(self.max_tokens),
                 "reasoningOptions": {"mode": "DISABLED"},
             },
-            "messages": [
-                {
-                    "role": "system",
-                    "text": build_yandex_reading_system_prompt(
-                        voice=self.tts_voice,
-                        role=self.tts_role,
-                        speed=self.tts_speed,
-                        pitch_shift=self.tts_pitch_shift,
-                    ),
-                },
-                {
-                    "role": "user",
-                    "text": build_yandex_reading_user_prompt(request, cards),
-                },
-            ],
+            "messages": messages,
         }
 
-        response = self._post_json(payload)
+    def _complete(self, messages: List[Dict[str, str]]) -> Tuple[Dict[str, object], Dict[str, object], str, str]:
+        response = self._post_json(self._completion_payload(messages))
         result = response.get("result", response)
         alternatives = result.get("alternatives") or []
         if not alternatives:
@@ -235,19 +277,54 @@ class YandexLLMService(ReadingGenerator):
         if not raw_text:
             raise RuntimeError("Yandex LLM вернул пустой текстовый ответ")
 
-        parsed = self._parse_json_response(raw_text)
-        narrative = self._build_narrative(parsed, cards)
+        return self._parse_json_response(raw_text), result, str(status), raw_text
 
-        usage = result.get("usage", {})
-        self._last_metadata = {
-            "llm_model_uri": self.model_uri,
-            "llm_model_version": str(result.get("modelVersion", "")),
-            "llm_status": str(status),
-            "llm_input_tokens": str(usage.get("inputTextTokens", "")),
-            "llm_completion_tokens": str(usage.get("completionTokens", "")),
-            "llm_total_tokens": str(usage.get("totalTokens", "")),
-        }
-        return narrative
+    def _expansion_reasons(self, narrative: ReadingNarrative, cards_count: int) -> List[str]:
+        reasons: List[str] = []
+        if len(narrative.summary) < 600:
+            reasons.append("summary короче 600 символов")
+        if len(narrative.advice) < 420:
+            reasons.append("advice короче 420 символов")
+
+        for index, section in enumerate(narrative.card_sections, start=1):
+            if len(section) < 420:
+                reasons.append(f"card_sections[{index}] короче 420 символов")
+
+        speech_total = len(narrative.spoken_text)
+        min_speech_chars = 1200 if cards_count <= 3 else 1800
+        if speech_total < min_speech_chars:
+            reasons.append(f"speech короче {min_speech_chars} символов")
+
+        card_speech_segments = [
+            segment for segment in narrative.speech_plan.segments if segment.section == "cards"
+        ]
+        for index, segment in enumerate(card_speech_segments, start=1):
+            if len(segment.text) < 220:
+                reasons.append(f"speech.cards[{index}] короче 220 символов")
+
+        return reasons
+
+    def _build_expansion_repair_prompt(self, reasons: List[str], cards_count: int) -> str:
+        min_speech_chars = 1200 if cards_count <= 3 else 1800
+        return "\n".join(
+            [
+                "Предыдущий JSON корректный по схеме, но слишком короткий и сухой для живой озвучки.",
+                "Нужно вернуть новый полный JSON той же схемы. Не пиши markdown и пояснения вне JSON.",
+                "",
+                "Что исправить:",
+                *[f"- {reason}" for reason in reasons],
+                "",
+                "Жесткие требования к новой версии:",
+                "- summary: минимум 600 символов, цельная история, а не тезисы.",
+                "- каждый card_sections: минимум 420 символов, с сюжетным фокусом, смыслом карты и переходом к следующему акту.",
+                "- advice: минимум 420 символов, с одним конкретным шагом на ближайшие 24-72 часа.",
+                f"- speech целиком: минимум {min_speech_chars} символов живой речи.",
+                "- каждая speech.cards: минимум 220 символов, 4-6 коротких предложений.",
+                "- Сохрани стиль Механического Оракула как спокойную точность и легкий ритуальный оттенок, но не перегружай текст механическими образами.",
+                "- Не называй голос или сервис рабочим названием проекта или любым другим именем.",
+                "- Не сокращай ответ. Короткая версия снова будет считаться ошибкой.",
+            ]
+        )
 
     def _post_json(self, payload: Dict[str, object]) -> Dict[str, object]:
         data = json.dumps(payload, ensure_ascii=False).encode("utf-8")
@@ -301,10 +378,13 @@ class YandexLLMService(ReadingGenerator):
         if not isinstance(speech, dict):
             raise RuntimeError("Ответ Yandex LLM должен содержать объект speech")
 
-        intro = self._require_text(speech, "intro")
-        speech_cards = self._require_text_list(speech, "cards", len(cards))
-        speech_summary = self._require_text(speech, "summary")
-        speech_outro = self._require_text(speech, "outro")
+        intro = self._normalize_speech_text(self._require_text(speech, "intro"))
+        speech_cards = [
+            self._normalize_speech_text(text)
+            for text in self._require_text_list(speech, "cards", len(cards))
+        ]
+        speech_summary = self._normalize_speech_text(self._require_text(speech, "summary"))
+        speech_outro = self._normalize_speech_text(self._require_text(speech, "outro"))
 
         return ReadingNarrative(
             title=title,
@@ -334,6 +414,33 @@ class YandexLLMService(ReadingGenerator):
             raise RuntimeError(
                 f"Поле '{key}' в ответе Yandex LLM должно содержать ровно {expected_length} элементов"
             )
+        return normalized
+
+    def _normalize_speech_text(self, text: str) -> str:
+        replacements = {
+            "для проекта Tarobot": "для проекта",
+            "для проекта tarobot": "для проекта",
+            "для Tarobot": "для проекта",
+            "для tarobot": "для проекта",
+            "проекта Tarobot": "проекта",
+            "проекта tarobot": "проекта",
+            "проект Tarobot": "проект",
+            "проект tarobot": "проект",
+            "Tarobot'а": "проекта",
+            "tarobot'а": "проекта",
+            "Tarobot": "оракул",
+            "tarobot": "оракул",
+            "Таробот": "оракул",
+            "теработ": "оракул",
+            "LLM": "эл-эл-эм",
+            "MVP": "эм-ви-пи",
+            "POC": "пи-о-си",
+            "\u2011": "-",
+            "\u202f": " ",
+        }
+        normalized = text
+        for source, target in replacements.items():
+            normalized = normalized.replace(source, target)
         return normalized
 
 

@@ -302,8 +302,20 @@ def _split_hard(text: str, max_chars: int) -> List[str]:
 
 def _prepare_text_for_yandex_tts(text: str) -> str:
     replacements = {
-        "Tarobot": "Таробот",
-        "tarobot": "Таробот",
+        "для проекта Tarobot": "для проекта",
+        "для проекта tarobot": "для проекта",
+        "для Tarobot": "для проекта",
+        "для tarobot": "для проекта",
+        "проекта Tarobot": "проекта",
+        "проекта tarobot": "проекта",
+        "проект Tarobot": "проект",
+        "проект tarobot": "проект",
+        "Tarobot'а": "проекта",
+        "tarobot'а": "проекта",
+        "Tarobot": "оракул",
+        "tarobot": "оракул",
+        "Таробот": "оракул",
+        "теработ": "оракул",
         "LLM": "эл-эл-эм",
         "MVP": "эм-ви-пи",
         "POC": "пи-о-си",

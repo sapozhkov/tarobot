@@ -69,15 +69,16 @@ class TarobotFlowTests(unittest.TestCase):
         self.assertIn("3 карты", narrative.spoken_text)
         self.assertNotIn("3 карт.", narrative.spoken_text)
 
-    def test_mock_llm_russifies_project_name_for_speech(self) -> None:
+    def test_mock_llm_avoids_project_name_in_speech(self) -> None:
         llm = MockLLMService()
         narrative = llm.generate_reading(
             ReadingRequest(question="Какой следующий шаг для Tarobot?", cards_count=3, seed=42),
             draw_cards(cards_count=3, seed=42),
         )
 
-        self.assertIn("Таробот", narrative.spoken_text)
+        self.assertIn("для проекта", narrative.spoken_text)
         self.assertNotIn("Tarobot", narrative.spoken_text)
+        self.assertNotIn("Таробот", narrative.spoken_text)
 
 
 if __name__ == "__main__":
