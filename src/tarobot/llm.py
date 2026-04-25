@@ -125,7 +125,8 @@ class MockLLMService(ReadingGenerator):
         return advice
 
     def _normalize_question_for_speech(self, question: str) -> str:
-        return question.strip().rstrip("?.!…")
+        normalized = question.strip().rstrip("?.!…")
+        return normalized.replace("Tarobot", "Таробот").replace("tarobot", "Таробот")
 
     def _cards_count_phrase(self, cards_count: int) -> str:
         if cards_count % 10 == 1 and cards_count % 100 != 11:

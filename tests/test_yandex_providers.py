@@ -160,7 +160,7 @@ class YandexProviderTests(unittest.TestCase):
         body = captured["bodies"][0]
         self.assertEqual(body["hints"][0]["voice"], "zamira")
         self.assertIn({"role": "friendly"}, body["hints"])
-        self.assertIn({"pitchShift": -100}, body["hints"])
+        self.assertIn({"pitchShift": "-100"}, body["hints"])
         self.assertEqual(body["outputAudioSpec"]["containerAudio"]["containerAudioType"], "WAV")
 
 

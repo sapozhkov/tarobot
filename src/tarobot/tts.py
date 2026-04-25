@@ -178,7 +178,7 @@ class YandexSpeechKitTTSProvider(SpeechSynthesizer):
         wav_segments: List[Tuple[int, bytes]] = []
 
         for segment in plan.segments:
-            chunks = _split_text_for_yandex_tts(segment.text, self.max_request_chars)
+            chunks = _split_text_for_yandex_tts(_prepare_text_for_yandex_tts(segment.text), self.max_request_chars)
             for index, chunk_text in enumerate(chunks):
                 pause_ms = segment.pause_ms if index == len(chunks) - 1 else 180
                 wav_segments.append((pause_ms, self._synthesize_chunk(chunk_text)))
@@ -230,11 +230,11 @@ class YandexSpeechKitTTSProvider(SpeechSynthesizer):
         if self.role:
             hints.append({"role": self.role})
         if abs(self.speed - 1.0) > 1e-9:
-            hints.append({"speed": self.speed})
+            hints.append({"speed": str(self.speed)})
         if abs(self.pitch_shift) > 1e-9:
-            hints.append({"pitchShift": self.pitch_shift})
+            hints.append({"pitchShift": str(self.pitch_shift)})
         if self.volume is not None:
-            hints.append({"volume": self.volume})
+            hints.append({"volume": str(self.volume)})
         return hints
 
 
@@ -298,6 +298,20 @@ def _split_hard(text: str, max_chars: int) -> List[str]:
     if current:
         chunks.append(current)
     return chunks
+
+
+def _prepare_text_for_yandex_tts(text: str) -> str:
+    replacements = {
+        "Tarobot": "Таробот",
+        "tarobot": "Таробот",
+        "LLM": "эл-эл-эм",
+        "MVP": "эм-ви-пи",
+        "POC": "пи-о-си",
+    }
+    prepared = text
+    for source, target in replacements.items():
+        prepared = prepared.replace(source, target)
+    return prepared
 
 
 def _combine_wave_files(segment_paths: Iterable[Tuple[int, Path]], output_path: Path) -> None:
