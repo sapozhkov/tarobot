@@ -5,7 +5,11 @@ import json
 from pathlib import Path
 from typing import List, Sequence
 
-from .playing_cards import analyze_many_images, build_reference_library, load_card_manifest
+from .tarot_cards import (
+    analyze_many_tarot_images,
+    build_tarot_reference_library,
+    load_tarot_manifest,
+)
 
 
 def expand_inputs(inputs: Sequence[str]) -> List[Path]:
@@ -13,11 +17,19 @@ def expand_inputs(inputs: Sequence[str]) -> List[Path]:
     for raw in inputs:
         path = Path(raw)
         if path.is_dir():
-            expanded.extend(sorted(path.glob("*.JPG")))
-            expanded.extend(sorted(path.glob("*.jpg")))
-            expanded.extend(sorted(path.glob("*.png")))
+            expanded.extend(
+                sorted(
+                    (
+                        child
+                        for child in path.iterdir()
+                        if child.is_file() and child.suffix.lower() in {".jpg", ".jpeg", ".png"}
+                    ),
+                    key=lambda child: child.name.lower(),
+                )
+            )
         else:
             expanded.append(path)
+
     unique_paths = []
     seen = set()
     for path in expanded:
@@ -29,7 +41,7 @@ def expand_inputs(inputs: Sequence[str]) -> List[Path]:
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(description="Recognize ordinary playing cards on photos")
+    parser = argparse.ArgumentParser(description="Recognize real Tarot cards on photos")
     parser.add_argument(
         "inputs",
         nargs="+",
@@ -38,13 +50,13 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--manifest",
         type=Path,
-        default=Path("tests/examples/card_set/manifest.json"),
-        help="Path to image manifest with reference labels",
+        default=Path("tests/examples/taro_cards/manifest.json"),
+        help="Path to Tarot image manifest with reference labels",
     )
     parser.add_argument(
         "--output-dir",
         type=Path,
-        default=Path("runs/playing_cards"),
+        default=Path("runs/tarot_cards"),
         help="Directory for debug artifacts and summary.json",
     )
     parser.add_argument(
@@ -56,7 +68,7 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument(
         "--no-debug",
         action="store_true",
-        help="Do not save overlays, masks and warped cards",
+        help="Do not save overlays, crops and debug.json files",
     )
     return parser
 
@@ -69,13 +81,13 @@ def main(argv: Sequence[str] | None = None) -> int:
     if not image_paths:
         parser.error("No images were found")
 
-    manifest = load_card_manifest(args.manifest)
-    reference_library = build_reference_library(manifest, args.manifest.parent)
+    manifest = load_tarot_manifest(args.manifest)
+    library = build_tarot_reference_library(manifest, args.manifest.parent)
     output_dir = None if args.no_debug else args.output_dir
 
-    results = analyze_many_images(
+    results = analyze_many_tarot_images(
         image_paths=image_paths,
-        library=reference_library,
+        library=library,
         manifest=manifest,
         output_root=output_dir,
         expected_total_count_override=args.expected_count,
@@ -96,9 +108,11 @@ def main(argv: Sequence[str] | None = None) -> int:
         )
         for card in result.cards:
             label = card.label or f"? {card.best_guess_label}"
+            name = card.name_ru or "?"
+            orientation = card.orientation or "?"
             print(
-                f"  {card.index}. {label}, confidence={card.confidence:.3f}, "
-                f"classifier={card.classifier}, overlap={card.overlap_suspected}"
+                f"  {card.index}. {label} ({name}), orientation={orientation}, "
+                f"confidence={card.confidence:.3f}, inliers={card.inliers}"
             )
         if result.debug_dir is not None:
             print(f"  debug: {result.debug_dir}")

@@ -1,0 +1,155 @@
+{
+  "expected_total_count_default": 5,
+  "reference_images": {
+    "all/IMG_3577.JPG": [
+      ["judgement", "sun", "moon", "star", "tower", "devil", "temperance"],
+      ["death", "hanged_man", "justice", "wheel_of_fortune", "hermit", "strength", "chariot"],
+      ["lovers", "hierophant", "emperor", "empress", "high_priestess", "magician", "fool"]
+    ],
+    "all/IMG_3578.JPG": [
+      ["queen_of_pentacles", "knight_of_pentacles", "page_of_pentacles", "ten_of_pentacles", "nine_of_pentacles", "eight_of_pentacles", "seven_of_pentacles"],
+      ["six_of_pentacles", "five_of_pentacles", "four_of_pentacles", "three_of_pentacles", "two_of_pentacles", "ace_of_pentacles", "king_of_swords"],
+      ["queen_of_swords", "knight_of_swords", "page_of_swords", "ten_of_swords", "nine_of_swords", "eight_of_swords", "seven_of_swords"]
+    ],
+    "all/IMG_3579.JPG": [
+      ["six_of_swords", "five_of_swords", "four_of_swords", "three_of_swords", "king_of_pentacles", "two_of_swords", "ace_of_swords"],
+      ["king_of_wands", "queen_of_wands", "knight_of_wands", "page_of_wands", "ten_of_wands", "nine_of_wands", "eight_of_wands"],
+      ["seven_of_wands", "six_of_wands", "five_of_wands", "four_of_wands", "three_of_wands", "two_of_wands", "ace_of_wands"]
+    ],
+    "all/IMG_3580.JPG": [
+      ["king_of_cups", "queen_of_cups", "knight_of_cups", "page_of_cups", "ten_of_cups", "nine_of_cups", "eight_of_cups"],
+      ["seven_of_cups", "six_of_cups", "five_of_cups", "four_of_cups", "three_of_cups", "two_of_cups", "ace_of_cups"],
+      ["world"]
+    ]
+  },
+  "layout_images": {
+    "IMG_3581.jpg": {
+      "kind": "good",
+      "expected_total_count": 5,
+      "visible_cards_left_to_right": [
+        {"id": "moon", "orientation": "upright"},
+        {"id": "star", "orientation": "upright"},
+        {"id": "judgement", "orientation": "upright"},
+        {"id": "sun", "orientation": "upright"},
+        {"id": "high_priestess", "orientation": "upright"}
+      ],
+      "notes": "Пять старших арканов, прямое положение."
+    },
+    "IMG_3582.JPG": {
+      "kind": "good",
+      "expected_total_count": 5,
+      "visible_cards_left_to_right": [
+        {"id": "hierophant", "orientation": "upright"},
+        {"id": "emperor", "orientation": "upright"},
+        {"id": "magician", "orientation": "upright"},
+        {"id": "fool", "orientation": "upright"},
+        {"id": "empress", "orientation": "upright"}
+      ],
+      "notes": "Пять старших арканов, прямое положение."
+    },
+    "IMG_3583.JPG": {
+      "kind": "good",
+      "expected_total_count": 3,
+      "visible_cards_left_to_right": [
+        {"id": "lovers", "orientation": "upright"},
+        {"id": "chariot", "orientation": "upright"},
+        {"id": "justice", "orientation": "upright"}
+      ],
+      "notes": "Тестовый расклад на 3 карты."
+    },
+    "IMG_3584.JPG": {
+      "kind": "edge_case",
+      "expected_total_count": 7,
+      "visible_cards_left_to_right": [
+        {"id": "wheel_of_fortune", "orientation": "upright"},
+        {"id": "hermit", "orientation": "upright"},
+        {"id": "temperance", "orientation": "upright"},
+        {"id": "hanged_man", "orientation": "upright"},
+        {"id": "tower", "orientation": "reversed"},
+        {"id": "devil", "orientation": "reversed"},
+        {"id": "death", "orientation": "reversed"}
+      ],
+      "notes": "Семь карт с несколькими перевернутыми; первый кадр снят близко к краю карты."
+    }
+  },
+  "cards": {
+    "fool": {"name_ru": "Шут", "arcana": "major"},
+    "magician": {"name_ru": "Маг", "arcana": "major"},
+    "high_priestess": {"name_ru": "Верховная Жрица", "arcana": "major"},
+    "empress": {"name_ru": "Императрица", "arcana": "major"},
+    "emperor": {"name_ru": "Император", "arcana": "major"},
+    "hierophant": {"name_ru": "Иерофант", "arcana": "major"},
+    "lovers": {"name_ru": "Влюбленные", "arcana": "major"},
+    "chariot": {"name_ru": "Колесница", "arcana": "major"},
+    "strength": {"name_ru": "Сила", "arcana": "major"},
+    "hermit": {"name_ru": "Отшельник", "arcana": "major"},
+    "wheel_of_fortune": {"name_ru": "Колесо Фортуны", "arcana": "major"},
+    "justice": {"name_ru": "Справедливость", "arcana": "major"},
+    "hanged_man": {"name_ru": "Повешенный", "arcana": "major"},
+    "death": {"name_ru": "Смерть", "arcana": "major"},
+    "temperance": {"name_ru": "Умеренность", "arcana": "major"},
+    "devil": {"name_ru": "Дьявол", "arcana": "major"},
+    "tower": {"name_ru": "Башня", "arcana": "major"},
+    "star": {"name_ru": "Звезда", "arcana": "major"},
+    "moon": {"name_ru": "Луна", "arcana": "major"},
+    "sun": {"name_ru": "Солнце", "arcana": "major"},
+    "judgement": {"name_ru": "Суд", "arcana": "major"},
+    "world": {"name_ru": "Мир", "arcana": "major"},
+    "ace_of_wands": {"name_ru": "Туз Жезлов", "arcana": "minor", "suit": "wands"},
+    "two_of_wands": {"name_ru": "Двойка Жезлов", "arcana": "minor", "suit": "wands"},
+    "three_of_wands": {"name_ru": "Тройка Жезлов", "arcana": "minor", "suit": "wands"},
+    "four_of_wands": {"name_ru": "Четверка Жезлов", "arcana": "minor", "suit": "wands"},
+    "five_of_wands": {"name_ru": "Пятерка Жезлов", "arcana": "minor", "suit": "wands"},
+    "six_of_wands": {"name_ru": "Шестерка Жезлов", "arcana": "minor", "suit": "wands"},
+    "seven_of_wands": {"name_ru": "Семерка Жезлов", "arcana": "minor", "suit": "wands"},
+    "eight_of_wands": {"name_ru": "Восьмерка Жезлов", "arcana": "minor", "suit": "wands"},
+    "nine_of_wands": {"name_ru": "Девятка Жезлов", "arcana": "minor", "suit": "wands"},
+    "ten_of_wands": {"name_ru": "Десятка Жезлов", "arcana": "minor", "suit": "wands"},
+    "page_of_wands": {"name_ru": "Паж Жезлов", "arcana": "minor", "suit": "wands"},
+    "knight_of_wands": {"name_ru": "Рыцарь Жезлов", "arcana": "minor", "suit": "wands"},
+    "queen_of_wands": {"name_ru": "Королева Жезлов", "arcana": "minor", "suit": "wands"},
+    "king_of_wands": {"name_ru": "Король Жезлов", "arcana": "minor", "suit": "wands"},
+    "ace_of_cups": {"name_ru": "Туз Кубков", "arcana": "minor", "suit": "cups"},
+    "two_of_cups": {"name_ru": "Двойка Кубков", "arcana": "minor", "suit": "cups"},
+    "three_of_cups": {"name_ru": "Тройка Кубков", "arcana": "minor", "suit": "cups"},
+    "four_of_cups": {"name_ru": "Четверка Кубков", "arcana": "minor", "suit": "cups"},
+    "five_of_cups": {"name_ru": "Пятерка Кубков", "arcana": "minor", "suit": "cups"},
+    "six_of_cups": {"name_ru": "Шестерка Кубков", "arcana": "minor", "suit": "cups"},
+    "seven_of_cups": {"name_ru": "Семерка Кубков", "arcana": "minor", "suit": "cups"},
+    "eight_of_cups": {"name_ru": "Восьмерка Кубков", "arcana": "minor", "suit": "cups"},
+    "nine_of_cups": {"name_ru": "Девятка Кубков", "arcana": "minor", "suit": "cups"},
+    "ten_of_cups": {"name_ru": "Десятка Кубков", "arcana": "minor", "suit": "cups"},
+    "page_of_cups": {"name_ru": "Паж Кубков", "arcana": "minor", "suit": "cups"},
+    "knight_of_cups": {"name_ru": "Рыцарь Кубков", "arcana": "minor", "suit": "cups"},
+    "queen_of_cups": {"name_ru": "Королева Кубков", "arcana": "minor", "suit": "cups"},
+    "king_of_cups": {"name_ru": "Король Кубков", "arcana": "minor", "suit": "cups"},
+    "ace_of_swords": {"name_ru": "Туз Мечей", "arcana": "minor", "suit": "swords"},
+    "two_of_swords": {"name_ru": "Двойка Мечей", "arcana": "minor", "suit": "swords"},
+    "three_of_swords": {"name_ru": "Тройка Мечей", "arcana": "minor", "suit": "swords"},
+    "four_of_swords": {"name_ru": "Четверка Мечей", "arcana": "minor", "suit": "swords"},
+    "five_of_swords": {"name_ru": "Пятерка Мечей", "arcana": "minor", "suit": "swords"},
+    "six_of_swords": {"name_ru": "Шестерка Мечей", "arcana": "minor", "suit": "swords"},
+    "seven_of_swords": {"name_ru": "Семерка Мечей", "arcana": "minor", "suit": "swords"},
+    "eight_of_swords": {"name_ru": "Восьмерка Мечей", "arcana": "minor", "suit": "swords"},
+    "nine_of_swords": {"name_ru": "Девятка Мечей", "arcana": "minor", "suit": "swords"},
+    "ten_of_swords": {"name_ru": "Десятка Мечей", "arcana": "minor", "suit": "swords"},
+    "page_of_swords": {"name_ru": "Паж Мечей", "arcana": "minor", "suit": "swords"},
+    "knight_of_swords": {"name_ru": "Рыцарь Мечей", "arcana": "minor", "suit": "swords"},
+    "queen_of_swords": {"name_ru": "Королева Мечей", "arcana": "minor", "suit": "swords"},
+    "king_of_swords": {"name_ru": "Король Мечей", "arcana": "minor", "suit": "swords"},
+    "ace_of_pentacles": {"name_ru": "Туз Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "two_of_pentacles": {"name_ru": "Двойка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "three_of_pentacles": {"name_ru": "Тройка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "four_of_pentacles": {"name_ru": "Четверка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "five_of_pentacles": {"name_ru": "Пятерка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "six_of_pentacles": {"name_ru": "Шестерка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "seven_of_pentacles": {"name_ru": "Семерка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "eight_of_pentacles": {"name_ru": "Восьмерка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "nine_of_pentacles": {"name_ru": "Девятка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "ten_of_pentacles": {"name_ru": "Десятка Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "page_of_pentacles": {"name_ru": "Паж Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "knight_of_pentacles": {"name_ru": "Рыцарь Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "queen_of_pentacles": {"name_ru": "Королева Пентаклей", "arcana": "minor", "suit": "pentacles"},
+    "king_of_pentacles": {"name_ru": "Король Пентаклей", "arcana": "minor", "suit": "pentacles"}
+  }
+}

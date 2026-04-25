@@ -40,7 +40,7 @@
 - Видео пока не является обязательным условием POC.
 - Ручной оператор в MVP не планируется.
 - Архитектурная схема по размещению: `Raspberry Pi` рядом с механикой + облако или локальная машина для сервисной логики.
-- Detection / count validation можно разрабатывать и проверять на обычных игральных картах.
+- Старый POC на обычных игральных картах удален; vision-разработку дальше проверяем на реальных фото Таро из `tests/examples/taro_cards`.
 - Финальное распознавание для Таро не должно опираться на угол карты и ранги/масти игральной колоды.
 - Целевой путь для Таро: `whole-card recognition + upright/reversed + OCR fallback + layout interpreter`.
 
@@ -86,6 +86,7 @@
 - `#5` Добавить модель `Session` и `event log` для повторяемых прогонов ритуала
 - `#6` Определить протокол `hardware-agent` и собрать локальный симулятор
 - `#7` Собрать stub-сервис `hardware-agent` для Raspberry Pi
+- `#8` Добавить реальные таро карты для распознавания
 - `#12` TTS polish: sample matrix, длина речи и delivery formats
 
 Если появляется новая работа, по возможности привязывайте ее к существующим issue или заводите новое issue в том же стиле.
@@ -166,6 +167,9 @@
 - [src/tarobot/cards.py](/Users/avlsapozhkov/projects/tarobot/src/tarobot/cards.py) — simulated deck и логика вытягивания карт;
 - [src/tarobot/llm.py](/Users/avlsapozhkov/projects/tarobot/src/tarobot/llm.py) — текущая mock-генерация гадания;
 - [src/tarobot/tts.py](/Users/avlsapozhkov/projects/tarobot/src/tarobot/tts.py) — текущий TTS слой;
+- [src/tarobot/vision/tarot_cards.py](/Users/avlsapozhkov/projects/tarobot/src/tarobot/vision/tarot_cards.py) — распознавание реальных карт Таро по whole-card matching;
+- [recognize_taro.py](/Users/avlsapozhkov/projects/tarobot/recognize_taro.py) — CLI для локального vision-прогона по фото;
+- [tests/examples/taro_cards/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/taro_cards/manifest.json) — разметка reference-фото, раскладов и русских названий карт;
 - [tests/test_flow.py](/Users/avlsapozhkov/projects/tarobot/tests/test_flow.py) — базовый e2e тест.
 
 ## Базовые команды
@@ -192,6 +196,12 @@ python3 main.py "Какой сейчас лучший следующий шаг?
 
 ```bash
 python3 -m unittest discover -s tests -v
+```
+
+Vision-прогон по реальным картам Таро:
+
+```bash
+python3 recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
 ```
 
 ## Handoff protocol

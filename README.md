@@ -153,11 +153,11 @@ python3 main.py "Что сейчас самое важное?" --llm-provider ya
 - `reading_audio.m4a` или текстовая заглушка, если аудио отключено
 - `manifest.json`
 
-## Vision POC для обычных карт
+## Vision POC для реальных карт Таро
 
-Для задач `#1` и `#2` в репозитории есть простой локальный инструмент распознавания обычных игральных карт на фото.
+Для задач `#1`, `#2` и `#8` в репозитории есть локальный инструмент распознавания реальных карт Таро на фото.
 
-Сейчас он рассчитан на фотографии сверху, темный фон и светлые карты. В качестве reference-набора используется [tests/examples/card_set/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/card_set/manifest.json).
+Сейчас он рассчитан на фотографии сверху, темный фон и конкретную отснятую колоду. В качестве reference-набора используется [tests/examples/taro_cards/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/taro_cards/manifest.json): в `all/` лежат общие фото всей колоды, в `set/` — тестовые расклады.
 
 Установка зависимостей:
 
@@ -168,29 +168,31 @@ python3 -m pip install --user -e .
 Локальный запуск по каталогу с изображениями:
 
 ```bash
-python3 recognize_cards.py tests/examples/card_set --output-dir runs/playing_cards_demo
+python3 recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
 ```
 
 Что делает инструмент:
 
-- находит кандидаты карт на фото;
+- ищет карты на фото через whole-card feature matching по библиотеке конкретной колоды;
 - проверяет ожидаемое количество карт;
 - выравнивает каждую найденную карту;
-- пытается распознать масть и ранг;
+- распознает конкретную карту Таро;
+- определяет положение `upright / reversed`;
 - отдает `reason_codes`, confidence и debug-артефакты.
 
 Что сохраняется в `--output-dir`:
 
 - `summary.json` с итогом по всем изображениям;
-- `mask.png` и `overlay.png` для каждой сцены;
+- `overlay.png` для каждой сцены;
 - `card_XX.png` с выровненными кропами карт;
-- `debug.json` с bbox, confidence и top-k кандидатами.
+- `debug.json` с bbox, orientation, confidence и match-метриками.
 
 Текущие ограничения POC:
 
-- reference-слой опирается на уже размеченные примеры из manifest;
-- при сильном перекрытии карт инструмент лучше отказывается, чем уверенно врет;
-- это еще не tarot-specific pipeline, а быстрый CV-стенд для проверки detection/count/recognition.
+- reference-слой опирается на уже размеченные общие фото из manifest;
+- текущие тестовые фото сняты на одном фоне и в похожем свете;
+- для настоящего quality gate еще нужны негативные кейсы: недоложенные карты, overlap, блики, смаз, частичная обрезка и другой фон;
+- EXIF у исходных фото может содержать метаданные камеры и геолокации, перед публикацией ассетов это нужно отдельно вычистить.
 
 ## Верхнеуровневый flow
 

@@ -19,21 +19,20 @@
 
 ## Зафиксированное решение для Таро
 
-Для обычных игральных карт мы уже собрали полезный POC-стенд, но он не должен считаться финальным направлением распознавания для Таро.
+Старый POC-стенд на обычных игральных картах удален из кода и fixtures. Дальше vision-работа ведется на реальных фото конкретной колоды Таро из [tests/examples/taro_cards](/Users/avlsapozhkov/projects/tarobot/tests/examples/taro_cards).
 
 Что считаем правильным решением дальше:
 
-- detection и count validation остаются отдельным слоем и переиспользуются;
 - карта должна распознаваться по всей поверхности, а не по индексу в углу;
 - ориентация `upright / reversed` должна определяться отдельно и считаться частью результата;
 - подпись карты внизу нужно использовать как дополнительный сигнал через OCR или text matching;
 - интерпретация раскладки должна жить отдельным слоем поверх распознанных карт, а не внутри CV-пайплайна.
 
-Практический baseline для Таро:
+Практический baseline для Таро на текущем наборе:
 
 1. `scene detection`
 2. `rectification`
-3. `whole-card matching` по библиотеке конкретной колоды
+3. `whole-card feature matching` по библиотеке конкретной колоды
 4. проверка `upright / reversed`
 5. OCR подписи карты как fallback / second signal
 6. отдельный `layout interpreter` для разных типов раскладов
@@ -43,6 +42,12 @@
 - corner-based распознавание;
 - логика, жестко заточенная под ранги/масти игральных карт;
 - предположение, что расклад всегда идет в один ряд.
+
+Текущий seed-набор:
+
+- `tests/examples/taro_cards/all` — 4 общих фото всей колоды, используется как reference-библиотека;
+- `tests/examples/taro_cards/set` — 4 тестовых расклада на 3, 5 и 7 карт;
+- [tests/examples/taro_cards/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/taro_cards/manifest.json) — source of truth по card id, русским названиям, ожидаемому количеству и orientation.
 
 ## Главные failure cases
 
