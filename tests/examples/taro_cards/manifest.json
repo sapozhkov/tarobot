@@ -70,6 +70,42 @@
         {"id": "death", "orientation": "reversed"}
       ],
       "notes": "Семь карт с несколькими перевернутыми; первый кадр снят близко к краю карты."
+    },
+    "IMG_3585.JPG": {
+      "kind": "good",
+      "expected_total_count": 5,
+      "visible_cards_left_to_right": [
+        {"id": "three_of_pentacles", "orientation": "upright"},
+        {"id": "magician", "orientation": "upright"},
+        {"id": "seven_of_pentacles", "orientation": "upright"},
+        {"id": "two_of_swords", "orientation": "reversed"},
+        {"id": "ace_of_wands", "orientation": "upright"}
+      ],
+      "notes": "Пять карт, смесь старшего аркана и младших арканов; одна карта перевернута."
+    },
+    "IMG_3586.jpg": {
+      "kind": "edge_case",
+      "expected_total_count": 5,
+      "visible_cards_left_to_right": [
+        {"id": "magician", "orientation": "upright"},
+        {"id": "six_of_cups", "orientation": "upright"},
+        {"id": "king_of_wands", "orientation": "reversed"},
+        {"id": "nine_of_pentacles", "orientation": "upright"},
+        {"id": "queen_of_swords", "orientation": "reversed"}
+      ],
+      "notes": "Пять карт с несколькими перевернутыми; контрольный кадр того же расклада, что IMG_3587.jpg."
+    },
+    "IMG_3587.jpg": {
+      "kind": "edge_case",
+      "expected_total_count": 5,
+      "visible_cards_left_to_right": [
+        {"id": "magician", "orientation": "upright"},
+        {"id": "six_of_cups", "orientation": "upright"},
+        {"id": "king_of_wands", "orientation": "reversed"},
+        {"id": "nine_of_pentacles", "orientation": "upright"},
+        {"id": "queen_of_swords", "orientation": "reversed"}
+      ],
+      "notes": "Тот же расклад, что IMG_3586.jpg, но карты лежат под заметными углами."
     }
   },
   "cards": {

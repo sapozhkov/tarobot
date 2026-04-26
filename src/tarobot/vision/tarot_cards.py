@@ -452,6 +452,17 @@ def scale_match_to_original(match: TarotMatchCandidate, scale: float) -> TarotMa
     )
 
 
+def prune_matches_to_expected_count(
+    matches: Sequence[TarotMatchCandidate],
+    expected_total_count: Optional[int],
+) -> List[TarotMatchCandidate]:
+    if expected_total_count is None or len(matches) <= expected_total_count:
+        return list(matches)
+
+    strongest = sorted(matches, key=lambda match: (match.confidence, match.inliers), reverse=True)[:expected_total_count]
+    return sorted(strongest, key=lambda match: match.bbox[0])
+
+
 def save_tarot_debug_artifacts(
     image_path: Path,
     image: np.ndarray,
@@ -501,6 +512,7 @@ def analyze_tarot_image(
     scale = TAROT_SCENE_WIDTH / image.shape[1]
     matches_small = find_tarot_matches(image, library)
     matches = [scale_match_to_original(match, scale) for match in matches_small]
+    matches = prune_matches_to_expected_count(matches, expected_total_count)
 
     reason_codes: List[str] = []
     if not matches:
