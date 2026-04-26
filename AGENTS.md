@@ -174,34 +174,47 @@
 
 ## Базовые команды
 
+Проектный Python: `3.14.x`, окружение: `.venv`.
+
+Первичная установка:
+
+```bash
+/opt/homebrew/bin/python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+Дальше команды ниже запускаются через `.venv/bin/python`, чтобы не зависеть от активированной оболочки.
+
 Локальный прогон:
 
 ```bash
-python3 main.py "Что меня ждет?" --cards 5
+.venv/bin/python main.py "Что меня ждет?" --cards 5
 ```
 
 С воспроизводимым сидом:
 
 ```bash
-python3 main.py "Стоит ли делать следующий шаг?" --cards 3 --seed 42
+.venv/bin/python main.py "Стоит ли делать следующий шаг?" --cards 3 --seed 42
 ```
 
 Без аудио:
 
 ```bash
-python3 main.py "Какой сейчас лучший следующий шаг?" --cards 3 --silent-tts
+.venv/bin/python main.py "Какой сейчас лучший следующий шаг?" --cards 3 --silent-tts
 ```
 
 Тесты:
 
 ```bash
-python3 -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 Vision-прогон по реальным картам Таро:
 
 ```bash
-python3 recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
+.venv/bin/python recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
 ```
 
 ## Handoff protocol

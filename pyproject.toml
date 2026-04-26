@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 name = "tarobot"
 version = "0.1.0"
 description = "Na-kolenke MVP for a tarot reading service"
-requires-python = ">=3.9"
+requires-python = ">=3.14"
 dependencies = [
   "numpy>=2",
   "opencv-python-headless>=4.13",

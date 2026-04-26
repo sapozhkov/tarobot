@@ -73,36 +73,51 @@
 - `Raspberry Pi` hardware agent;
 - Telegram intake.
 
+## Локальное окружение
+
+Проектный Python: `3.14.x`. Локальная `.venv` создается внутри репозитория и не коммитится.
+
+Рекомендуемый локальный setup:
+
+```bash
+/opt/homebrew/bin/python3.14 -m venv .venv
+source .venv/bin/activate
+python -m pip install --upgrade pip
+python -m pip install -e .
+```
+
+Чтобы запуск не зависел от активированной оболочки, команды ниже можно выполнять через `.venv/bin/python`.
+
 ## Быстрый старт MVP
 
 Запуск:
 
 ```bash
-python3 main.py "Что будет с проектом, если двигаться короткими итерациями?" --cards 5
+.venv/bin/python main.py "Что будет с проектом, если двигаться короткими итерациями?" --cards 5
 ```
 
 Для воспроизводимого прогона:
 
 ```bash
-python3 main.py "Стоит ли запускать Tarobot летом?" --cards 3 --seed 42
+.venv/bin/python main.py "Стоит ли запускать Tarobot летом?" --cards 3 --seed 42
 ```
 
 Если нужен прогон без аудио:
 
 ```bash
-python3 main.py "Какой сейчас лучший следующий шаг?" --cards 3 --silent-tts
+.venv/bin/python main.py "Какой сейчас лучший следующий шаг?" --cards 3 --silent-tts
 ```
 
 Если нужно руками сравнить подачу голоса:
 
 ```bash
-python3 main.py "Какой тон для Tarobot звучит убедительнее?" --cards 3 --tts-voice Milena --tts-rate 165
+.venv/bin/python main.py "Какой тон для Tarobot звучит убедительнее?" --cards 3 --tts-voice Milena --tts-rate 165
 ```
 
 Проверка теста:
 
 ```bash
-python3 -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -v
 ```
 
 Локальная конфигурация для внешних API:
@@ -139,7 +154,7 @@ TAROBOT_TTS_PROVIDER=yandex
 Для разового переключения через CLI:
 
 ```bash
-python3 main.py "Что сейчас самое важное?" --llm-provider yandex --tts-provider yandex
+.venv/bin/python main.py "Что сейчас самое важное?" --llm-provider yandex --tts-provider yandex
 ```
 
 После запуска в `runs/` сохраняются:
@@ -159,16 +174,24 @@ python3 main.py "Что сейчас самое важное?" --llm-provider ya
 
 Сейчас он рассчитан на фотографии сверху, темный фон и конкретную отснятую колоду. В качестве reference-набора используется [tests/examples/taro_cards/manifest.json](/Users/avlsapozhkov/projects/tarobot/tests/examples/taro_cards/manifest.json): в `all/` лежат общие фото всей колоды, в `set/` — тестовые расклады.
 
-Установка зависимостей:
-
-```bash
-python3 -m pip install --user -e .
-```
-
 Локальный запуск по каталогу с изображениями:
 
 ```bash
-python3 recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
+.venv/bin/python recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_cards_demo
+```
+
+JSON-вывод для интеграции:
+
+```bash
+.venv/bin/python recognize_taro.py tests/examples/taro_cards/set --no-debug --json
+```
+
+Публичная функция для кода:
+
+```python
+from tarobot.vision import recognize_tarot_photo
+
+result = recognize_tarot_photo("tests/examples/taro_cards/set/IMG_3583.JPG")
 ```
 
 Что делает инструмент:
@@ -186,6 +209,13 @@ python3 recognize_taro.py tests/examples/taro_cards/set --output-dir runs/tarot_
 - `overlay.png` для каждой сцены;
 - `card_XX.png` с выровненными кропами карт;
 - `debug.json` с bbox, orientation, confidence и match-метриками.
+
+Основные поля JSON-результата:
+
+- `status`: `ok` или `failed`;
+- `reason_codes`: причины отказа или пустой список;
+- `detected_count` / `expected_total_count`;
+- `cards`: список распознанных карт с `card_id`, `name_ru`, `orientation`, `confidence`, `accepted`, `bbox` и `polygon`.
 
 Текущие ограничения POC:
 
