@@ -17,6 +17,7 @@ MIN_GOOD_MATCHES = 8
 MIN_INLIERS = 8
 MIN_ACCEPTED_CONFIDENCE = 0.45
 NMS_IOU_THRESHOLD = 0.30
+DEFAULT_TAROT_MANIFEST_PATH = Path("tests/examples/taro_cards/manifest.json")
 
 
 @dataclass(frozen=True)
@@ -100,6 +101,24 @@ class TarotCardRecognition:
         payload["bbox"] = list(self.bbox)
         return payload
 
+    def to_public_dict(self) -> Dict[str, object]:
+        return {
+            "position": self.index,
+            "card_id": self.label,
+            "best_guess_card_id": self.best_guess_label,
+            "name_ru": self.name_ru,
+            "orientation": self.orientation,
+            "confidence": self.confidence,
+            "accepted": self.accepted,
+            "bbox": list(self.bbox),
+            "polygon": self.polygon,
+            "match": {
+                "inliers": self.inliers,
+                "good_matches": self.good_matches,
+            },
+            "top_candidates": self.top_candidates,
+        }
+
 
 @dataclass(frozen=True)
 class TarotImageResult:
@@ -117,6 +136,19 @@ class TarotImageResult:
             "detected_count": self.detected_count,
             "reason_codes": self.reason_codes,
             "cards": [card.to_dict() for card in self.cards],
+        }
+        if self.debug_dir is not None:
+            payload["debug_dir"] = str(self.debug_dir)
+        return payload
+
+    def to_public_dict(self) -> Dict[str, object]:
+        payload = {
+            "image_path": str(self.image_path),
+            "status": "ok" if not self.reason_codes else "failed",
+            "expected_total_count": self.expected_total_count,
+            "detected_count": self.detected_count,
+            "reason_codes": self.reason_codes,
+            "cards": [card.to_public_dict() for card in self.cards],
         }
         if self.debug_dir is not None:
             payload["debug_dir"] = str(self.debug_dir)
@@ -537,3 +569,48 @@ def analyze_many_tarot_images(
             )
         )
     return results
+
+
+def recognize_tarot_photo(
+    image_path: Path | str,
+    manifest_path: Path | str = DEFAULT_TAROT_MANIFEST_PATH,
+    expected_total_count: Optional[int] = None,
+    output_root: Optional[Path | str] = None,
+) -> Dict[str, object]:
+    """Recognize Tarot cards on one photo and return a JSON-serializable payload."""
+    image_path = Path(image_path)
+    manifest_path = Path(manifest_path)
+    manifest = load_tarot_manifest(manifest_path)
+    manifest_entry = manifest.layout_images.get(image_path.name)
+    resolved_expected_total_count = expected_total_count
+    if resolved_expected_total_count is None and manifest_entry is not None:
+        resolved_expected_total_count = manifest_entry.expected_total_count
+
+    library = build_tarot_reference_library(manifest, manifest_path.parent)
+    result = analyze_tarot_image(
+        image_path=image_path,
+        library=library,
+        expected_total_count=resolved_expected_total_count,
+        output_root=Path(output_root) if output_root is not None else None,
+    )
+    return result.to_public_dict()
+
+
+def recognize_tarot_photos(
+    image_paths: Iterable[Path | str],
+    manifest_path: Path | str = DEFAULT_TAROT_MANIFEST_PATH,
+    expected_total_count: Optional[int] = None,
+    output_root: Optional[Path | str] = None,
+) -> List[Dict[str, object]]:
+    """Recognize Tarot cards on many photos and return JSON-serializable payloads."""
+    manifest_path = Path(manifest_path)
+    manifest = load_tarot_manifest(manifest_path)
+    library = build_tarot_reference_library(manifest, manifest_path.parent)
+    results = analyze_many_tarot_images(
+        image_paths=[Path(image_path) for image_path in image_paths],
+        library=library,
+        manifest=manifest,
+        output_root=Path(output_root) if output_root is not None else None,
+        expected_total_count_override=expected_total_count,
+    )
+    return [result.to_public_dict() for result in results]

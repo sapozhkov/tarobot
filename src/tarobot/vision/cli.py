@@ -70,6 +70,11 @@ def build_parser() -> argparse.ArgumentParser:
         action="store_true",
         help="Do not save overlays, crops and debug.json files",
     )
+    parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print JSON recognition payload to stdout",
+    )
     return parser
 
 
@@ -97,9 +102,16 @@ def main(argv: Sequence[str] | None = None) -> int:
         output_dir.mkdir(parents=True, exist_ok=True)
         summary_path = output_dir / "summary.json"
         summary_path.write_text(
-            json.dumps([result.to_dict() for result in results], ensure_ascii=False, indent=2),
+            json.dumps([result.to_public_dict() for result in results], ensure_ascii=False, indent=2),
             encoding="utf-8",
         )
+
+    if args.json:
+        payload = {
+            "results": [result.to_public_dict() for result in results],
+        }
+        print(json.dumps(payload, ensure_ascii=False, indent=2))
+        return 0
 
     for result in results:
         print(

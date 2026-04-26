@@ -5,6 +5,8 @@ from .tarot_cards import (
     analyze_tarot_image,
     build_tarot_reference_library,
     load_tarot_manifest,
+    recognize_tarot_photo,
+    recognize_tarot_photos,
 )
 
 __all__ = [
@@ -14,4 +16,6 @@ __all__ = [
     "analyze_tarot_image",
     "build_tarot_reference_library",
     "load_tarot_manifest",
+    "recognize_tarot_photo",
+    "recognize_tarot_photos",
 ]
